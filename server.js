@@ -15,6 +15,7 @@ app.use(express.json());
 
 // Your Contact API Route
 app.post('/api/contact', async (req, res) => {
+  console.log('Received contact form submission: API endpoint hit');
   const { name, email, phone, company, subject, message, service } = req.body;
 
   if (!name || !email || !phone || !message) {
@@ -30,6 +31,7 @@ app.post('/api/contact', async (req, res) => {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+
     });
 
     const mailOptions = {
@@ -60,6 +62,7 @@ app.post('/api/contact', async (req, res) => {
 
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Email sent successfully!' });
+    console.log('Email sent successfully!');
   } catch (error) {
     console.error('Error sending email:', error);
     res.status(500).json({ message: 'Failed to send email.', error: error.message });
