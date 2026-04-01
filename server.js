@@ -1,13 +1,15 @@
 // server.js
 import express from 'express';
 import cors from 'cors';
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { Resend } from 'resend';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Middleware
 app.use(cors());
@@ -23,28 +25,10 @@ app.post('/api/contact', async (req, res) => {
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_PORT == 465, 
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-
-    });
-
-    const mailOptions = {
-    
-      // 1. Send it FROM your authenticated Hostinger email
-      from: `"TechHubbix Website" <${process.env.SMTP_USER}>`, 
-      
-      // 2. When you click 'Reply' in your inbox, it will reply to the customer
-      replyTo: email, 
-      
-      // 3. Send it TO yourself
-      to: process.env.RECEIVER_EMAIL, 
-      
+    const { data, error } = await resend.emails.send({
+      from: "TechHubbix Website <website@techhubbix.in>",
+      to: process.env.RECEIVER_EMAIL,
+      reply_to: email,
       subject: subject || `New Contact Form Submission - ${service}`,
       html: `
         <h2>New Contact Request</h2>
@@ -57,14 +41,19 @@ app.post('/api/contact', async (req, res) => {
         <p><strong>Message:</strong></p>
         <p>${message}</p>
       `,
-   
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
+    // Check if Resend sent back an error
+    if (error) {
+      console.error('Resend API Error:', error);
+      return res.status(400).json({ message: 'Resend rejected the email', error });
+    }
+
+    console.log('Email sent successfully! Resend ID:', data.id);
     res.status(200).json({ message: 'Email sent successfully!' });
-    console.log('Email sent successfully!');
+    
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Server crash sending email:', error);
     res.status(500).json({ message: 'Failed to send email.', error: error.message });
   }
 });
