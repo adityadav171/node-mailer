@@ -26,7 +26,7 @@ app.post('/api/contact', async (req, res) => {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "TechHubbix Website <website@techhubbix.in>",
+      from: "TechHubbix Website <website@mail.techhubbix.in>",
       to: process.env.RECEIVER_EMAIL,
       reply_to: email,
       subject: subject || `New Contact Form Submission - ${service}`,
